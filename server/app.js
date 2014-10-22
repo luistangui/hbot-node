@@ -30,8 +30,41 @@ require('./routes')(app);
 
 // Start server
 server.listen(config.port, config.ip, function () {
-  console.log('Express server listening on %d, in %s mode', config.port, app.get('env'));
+  console.log('Express server listening on http://178.62.214.162:%d, in %s mode', config.port, app.get('env'));
 });
 
+
+//TEST :)
+var Client = require('node-xmpp-client');
+var ltx = require('ltx');
+
+/*
+var gtalk = new Client
+({
+      jid: 'hbot.node@gmail.com',
+      password: 'hbot1234',
+      host: 'talk.google.com',
+      port: 5222,
+      disallowTLS: true
+});
+*/
+//gtalk.on('error', function(){
+//    console.log('error');
+//});
+/*
+gtalk.on('online', function() {
+    console.log('online')
+    gtalk.send(new ltx.Element('presence', { })
+      .c('show').t('chat').up()
+      .c('status').t('Happily echoing lsyour <message/> stanzas')
+    )
+})
+*/
+/*
+gtalk.on('stanza', function(stanza) {
+    console.log('Incoming stanza: ', stanza.toString())
+})
+*/
+ 
 // Expose app
 exports = module.exports = app;
