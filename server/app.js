@@ -1,7 +1,3 @@
-/**
- * Main application file
- */
-
 'use strict';
 
 // Set default node environment to development
@@ -36,35 +32,42 @@ server.listen(config.port, config.ip, function () {
 
 //TEST :)
 var Client = require('node-xmpp-client');
-var ltx = require('ltx');
+var ltx=require('ltx');
 
-/*
-var gtalk = new Client
-({
-      jid: 'hbot.node@gmail.com',
-      password: 'hbot1234',
-      host: 'talk.google.com',
-      port: 5222,
-      disallowTLS: true
-});
-*/
-//gtalk.on('error', function(){
-//    console.log('error');
-//});
-/*
-gtalk.on('online', function() {
-    console.log('online')
+var options = {
+    jid: "hbot.node@gmail.com",
+    password: "*",
+    host: "talk.google.com",
+    port: 5222,
+    preferred: "PLAIN",
+    reconnect: true
+};
+
+var gtalk = new Client(options);
+
+gtalk.on('online', function()
+{
+    console.log("Connected");
     gtalk.send(new ltx.Element('presence', { })
       .c('show').t('chat').up()
-      .c('status').t('Happily echoing lsyour <message/> stanzas')
+      .c('status').t('Happily echoing your <message/> stanzas')
     )
-})
-*/
-/*
-gtalk.on('stanza', function(stanza) {
-    console.log('Incoming stanza: ', stanza.toString())
-})
-*/
- 
+});
+
+gtalk.on('error', function(e) {
+    console.log(e);
+});
+
+gtalk.on('stanza', function(stanza)
+{
+    if (stanza.is('message') && (stanza.attrs.type !== 'error'))
+    {
+        if(stanza.getChildText('body')!=null)
+        {
+            console.log(stanza.getChildText('body'));
+        }
+    }
+}) 
+
 // Expose app
 exports = module.exports = app;
