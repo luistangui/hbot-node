@@ -34,14 +34,12 @@ server.listen(config.port, config.ip, function () {
 var Client = require('node-xmpp-client');
 var ltx=require('ltx');
 
-var options = {
-    jid: "hbot.node@gmail.com",
-    password: "*",
-    host: "talk.google.com",
-    port: 5222,
-    preferred: "PLAIN",
-    reconnect: true
-};
+var options;
+try {
+    options = require('./config.json');
+} catch(err) {
+    throw "Cannot open file config.json. Shutting down...\n"+err;
+}
 
 var gtalk = new Client(options);
 

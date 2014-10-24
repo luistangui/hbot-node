@@ -1,0 +1,8 @@
+{
+    "jid": "changeme",
+    "password": "changeme",
+    "host": "change.me",
+    "port": 5222,
+    "preferred": "PLAIN",
+    "reconnect": true
+}
