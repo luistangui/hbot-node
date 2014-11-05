@@ -2,8 +2,9 @@
 
 module.exports = {
     name : 'hello',
-    command : function(context, stanza, argstr) { // Context tiene al cliente, asi como otra informacion de estado, como usuarios que tienen acceso al bot
+    params : 0,
+    command : function(client, from, message, argstr)
+    {        
         console.log("Comando hello funciona!");
-        console.log("Argumentos: "+argstr);
     }
 }

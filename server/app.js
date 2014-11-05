@@ -10,8 +10,7 @@ var expressConfig = require('./config/environment');
 // Connect to database
 mongoose.connect(expressConfig.mongo.uri, expressConfig.mongo.options);
 
-// Populate DB with sample data
-if(expressConfig.seedDB) { require('./config/seed'); }
+var HBotUserModel=require('./user.model').HBotUserModel;
 
 // Setup server
 var app = express();
@@ -20,31 +19,35 @@ var socketio = require('socket.io')(server, {
   serveClient: (expressConfig.env === 'production') ? false : true,
   path: '/socket.io-client'
 });
+app.io = socketio;
 require('./config/socketio')(socketio);
 require('./config/express')(app);
 require('./routes')(app);
 
-// Start server
-server.listen(expressConfig.port, expressConfig.ip, function () {
-  console.log('Express server listening on http://178.62.214.162:%d, in %s mode', expressConfig.port, app.get('env'));
-});
-
-
-//TEST :)
-var Client = require('node-xmpp-client');
-
-
+//Connect XMPP
 var options;
-try {
+try
+{
     options = require('./config.json');
-} catch(err) {
+}
+catch(err)
+{
     throw "[ERROR]: Cannot open file config.json.\nINFO: You might need to create a config.json file according to config.example.json template file.\nShutting down...\n"+err;
 }
 
-var gtalk = new Client(options);
+var gtalk = require('simple-xmpp');
+
+gtalk.connect(options);
 
 var StanzaProcessor = require('./stanzaprocessor.js');
-new StanzaProcessor(gtalk);
+var stanzaProcessor=new StanzaProcessor(gtalk,socketio);
 
-// Expose app
+app.stanzaProcessor=stanzaProcessor;
+
+// Start server
+server.listen(expressConfig.port, expressConfig.ip, function () {
+  console.log('Express server listening on http://128.199.54.247:%d, in %s mode', expressConfig.port, app.get('env'));
+});
+
+
 exports = module.exports = app;

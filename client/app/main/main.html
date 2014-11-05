@@ -4,12 +4,29 @@
   <div class="container">
     <h1>Wub Wub!</h1>
     <p class="lead">Ultimate talk engine</p>
-    <img src="assets/images/claptrap.png" alt="I'm Yeoman">
+    <img src="assets/images/claptrap.png">
   </div>
 </header>
 
+<div class="container">
+  <p>
+  <h4>Online</h4>
+    <ul >
+      <li ng-repeat="user in xmppRoster" class="list-unstyled">
+      <span ng-switch on="user.state">
+        <img ng-switch-when="online" src='/assets/images/online.png'>
+        <img ng-switch-when="away" src='/assets/images/away.png'>
+        <img ng-switch-when="offline" src='/assets/images/offline.png'>
+        <img ng-switch-when="dnd" src='/assets/images/unavailable.png'>
+        {{ user.jid }}
+      </span>
+      </li>
+    </ul>
+  </p>
+</div>
+
 <footer class="footer">
   <div class="container">
-      <p>HBot v0.0.0.0.0.0.0.0.1a</p>
+      <p>QHBot v0.1a</p>
   </div>
 </footer>

@@ -2,21 +2,14 @@
 
 angular.module 'hbotNodeApp'
 .controller 'MainCtrl', ($scope, $http, socket) ->
-  $scope.awesomeThings = []
+  $scope.xmppRoster=''
 
-  $http.get('/api/things').success (awesomeThings) ->
-    $scope.awesomeThings = awesomeThings
-    socket.syncUpdates 'thing', $scope.awesomeThings
+  $http.get('/api/hbot/roster').success (data) ->
+    $scope.xmppRoster = data
+    socket.syncUpdates 'xmpp-roster', $scope.xmppRoster,(event,rosterItem,xmppRoster)->
+      #TODO: saber como funciona esto realmente :S
+      $scope.xmppRoster=rosterItem
 
-  $scope.addThing = ->
-    return if $scope.newThing is ''
-    $http.post '/api/things',
-      name: $scope.newThing
-
-    $scope.newThing = ''
-
-  $scope.deleteThing = (thing) ->
-    $http.delete '/api/things/' + thing._id
-
-  $scope.$on '$destroy', ->
-    socket.unsyncUpdates 'thing'
+  $scope.updateRoster = ->
+    $http.get('/api/hbot/roster').success (data) ->
+      $scope.xmppRoster = data
