@@ -1,0 +1,7 @@
+He cambiado la lib por https://github.com/simple-xmpp/node-simple-xmpp
+
+Usa la que estabamo susando y da opciones de mas alto nivel. Estuve viendo como obtener el roster en la lib
+que estabamos usando y vaya horror. Se ve que los de esa lib no les interesa hacer apis de mas alto nivel
+y por eso alguien hizo simple-xmpp. Esta nueva mola mas, simplifica todo :) .
+
+Saludos ^^
