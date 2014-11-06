@@ -27,27 +27,29 @@ StanzaProcessor.prototype.setupCallbacks = function()
     self.xmppClient.on('stanza', self.onStanza);
     self.xmppClient.on('buddy', self.onBuddy);
     self.events.on('roster', self.onRoster);
-    self.io.on('connection', self.onIoConnection);
 };
-
-StanzaProcessor.prototype.onIoConnection=function (socket)
-{
-    console.log("socket-io connection stanzaprocessor!");
-}
-
 
 StanzaProcessor.prototype.onBuddy=function(jid, state, statusText)
 {
     if(self.roster!=undefined)
     {
-        self.roster.forEach(function(rosterItem)
-        {
-            if(rosterItem.jid==jid) rosterItem.state=state;
-        });
+        var User=self.getUser(jid);
+        if(User) User.state=state;
         
         console.log("BUDDY: "+jid+" -> ("+state+")");
         
-        self.io.sockets.emit("xmpp-roster:save",self.roster);
+        self.roster.sort(function(a,b)
+        {
+            if(a.state==b.state) return 0;
+            
+            if(a.state==self.xmppClient.STATUS.OFFLINE ||
+                b.state==self.xmppClient.STATUS.OFFLINE)
+            {
+                return a.state==self.xmppClient.STATUS.OFFLINE?1:-1;
+            }
+            
+            return 0;
+        });
         
         self.saveRoster();
     }
@@ -65,21 +67,34 @@ StanzaProcessor.prototype.onError = function(err)
     console.error("[ERROR]: "+err);
 };
 
+StanzaProcessor.prototype.getUser=function(jid)
+{
+    for (var i=0,l=self.roster.length; i<l;i++)
+    {
+        if(self.roster[i].jid==jid) return self.roster[i];
+    }
+    
+    return null;
+}
+
 StanzaProcessor.prototype.onChat = function(from, message) 
 {
     if(message != null)
     {
-        var msgBody = message;
-        console.log("msgbody: "+msgBody);
-        if(msgBody.charAt(0) == "$") 
+        
+        var User=self.getUser(from);
+        if(User.busy)
         {
-            var aMsg=msgBody.split(" ");
+            User.busy=false;
+            self.saveRoster();
+        }
+        
+        if(message.charAt(0) == "$") 
+        {
+            var aMsg=message.split(" ");
             var command = aMsg[0].slice(1);
-            
-            console.log("cmd: "+command);
             aMsg.shift();
             var argstr=aMsg;
-            console.log("argstr: "+argstr);
 
             if(self.plugins.hasOwnProperty(command) && 
                self.plugins[command].hasOwnProperty("command") &&
@@ -89,7 +104,8 @@ StanzaProcessor.prototype.onChat = function(from, message)
                 
                 self.saveRoster();
             }    
-        } else // Mensaje para todos los users
+        }
+        else // Mensaje para todos los users
         {
             self.broadcastMessage(from,message);   
         }
@@ -102,18 +118,26 @@ StanzaProcessor.prototype.saveRoster=function()
     {
         if(rosterItem.nick!=undefined)
         {
-            HBotUserModel.update({jid:rosterItem.jid},{nick:rosterItem.nick},function(err, nbRow)
+            HBotUserModel.findOne({jid:rosterItem.jid}, function (err, user)
             {
-					if (err)
-					{
-						console.log(err);
-					}
-            });
+                if (err) console.log(err);
+                if(user!=null && user.nick!=rosterItem.nick) 
+                {
+                    HBotUserModel.update({jid:rosterItem.jid},{nick:rosterItem.nick},function(err, nbRow)
+                    {
+    					if (err)
+    					{
+    						console.log(err);
+    					}
+                    });
             
-            console.log("Nick updated! "+rosterItem.jid+" -> "+rosterItem.nick);
+                    console.log("Nick updated! "+rosterItem.jid+" -> "+rosterItem.nick);
+                }
+            });
         }
     });
     
+    self.io.sockets.emit("xmpp-roster:save",self.roster);
 }
 
 StanzaProcessor.prototype.onStanza = function(stanza) {
@@ -152,6 +176,7 @@ StanzaProcessor.prototype.onRoster = function(roster)
             if(user!=null) 
             {
                 rosterItem.nick=user.nick;
+                rosterItem.busy=user.busy;
             }
         });
 
@@ -160,45 +185,21 @@ StanzaProcessor.prototype.onRoster = function(roster)
     	user.nick= rosterItem.jid.substr(0,rosterItem.jid.indexOf('@'));
     	user.save();
     	
+    	rosterItem.state=self.xmppClient.STATUS.OFFLINE;
+    	
     });
-    
-    self.requestPresences();
-}
-
-StanzaProcessor.prototype.requestPresences=function()
-{
-    self.roster.forEach(function(rosterItem)
-    {
-        self.xmppClient.probe(rosterItem.jid,function(state)
-        {
-            console.log("State: <"+rosterItem.jid+"> ("+rosterItem.state+") -> ("+state+")");
-           rosterItem.state=state; 
-         });
-    });
-    
-    self.io.sockets.emit("xmpp-roster:save",self.roster);
-    //setTimeout(self.requestPresences,5*1000);
 }
 
 StanzaProcessor.prototype.broadcastMessage = function(from,message)
 {
-    var nick=null;
-
-    self.roster.forEach(function(rosterItem)
-    {
-        if(rosterItem.jid==from)
-        {
-            nick=rosterItem.nick;
-        }
-    });
+    var UserFrom=self.getUser(from);
     
-    var brcMessage=nick+": "+message;
+    var brcMessage=UserFrom.nick+": "+message;
     
     
     self.roster.forEach(function(rosterItem)
     {
-        //TODO: Handle presence
-        if(rosterItem.jid!=from)
+        if(rosterItem.jid!=from && rosterItem.state!=self.xmppClient.STATUS.OFFLINE && !rosterItem.busy)
         {
             console.log("\""+brcMessage+"\""+" -> "+rosterItem.jid);
             self.xmppClient.send(rosterItem.jid,brcMessage,false);
@@ -211,9 +212,19 @@ StanzaProcessor.prototype.sendBotMessage=function(message)
     message="[Claptrap]: "+message;
     self.roster.forEach(function(rosterItem)
     {
-        console.log("\""+message+"\""+" -> "+rosterItem.jid);
-        self.xmppClient.send(rosterItem.jid,message,false);
+        if(rosterItem.state!=self.xmppClient.STATUS.OFFLINE && !rosterItem.busy)
+        {
+            console.log("\""+message+"\""+" -> "+rosterItem.jid);
+            self.xmppClient.send(rosterItem.jid,message,false);
+        }
     });   
+}
+
+StanzaProcessor.prototype.sendMessage=function(to,message)
+{
+    message="[Claptrap]: "+message;
+    console.log("\""+message+"\""+" -> "+to);
+    self.xmppClient.send(to,message,false);
 }
 
 StanzaProcessor.prototype.getRoster=function()

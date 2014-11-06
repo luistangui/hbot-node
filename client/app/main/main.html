@@ -2,28 +2,78 @@
 
 <header class="hero-unit" id="banner">
   <div class="container">
+  <div class="row">
+    <div class="col-md-2">
+      <img src="assets/images/claptrap.png">
+    </div>
+    <div class="col-md-4">
     <h1>Wub Wub!</h1>
     <p class="lead">Ultimate talk engine</p>
-    <img src="assets/images/claptrap.png">
+    </div>
+  </div>
+    
+    
   </div>
 </header>
-
+<br>
 <div class="container">
-  <p>
-  <h4>Online</h4>
-    <ul >
-      <li ng-repeat="user in xmppRoster" class="list-unstyled">
-      <span ng-switch on="user.state">
-        <img ng-switch-when="online" src='/assets/images/online.png'>
-        <img ng-switch-when="away" src='/assets/images/away.png'>
-        <img ng-switch-when="offline" src='/assets/images/offline.png'>
-        <img ng-switch-when="dnd" src='/assets/images/unavailable.png'>
-        {{ user.jid }}
-      </span>
-      </li>
-    </ul>
-  </p>
+  <div class="row">
+    <div class="col-md-3">
+      <p>
+        <h4>Online</h4>
+        <ul class="list-unstyled">
+          <li ng-repeat="user in xmppRoster" class="list-unstyled">
+            <span ng-switch on="user.state">
+            <img ng-switch-when="online" src='/assets/images/online.png'>
+            <img ng-switch-when="away" src='/assets/images/away.png'>
+            <img ng-switch-when="offline" src='/assets/images/offline.png'>
+            <img ng-switch-when="dnd" src='/assets/images/unavailable.png'>
+            {{ user.nick }} <span style="color:darkred;" ng-show="user.busy">(busy)</span>
+            </span>
+          </li>
+        </ul>
+      </p>
+    </div>
+    <div class="col-md-9">
+      <div class="panel panel-primary">
+        <div class="panel-heading">Live Chat</div>
+      
+        <ul id="chatBox" class="list-group" style="max-height:350px;overflow-y:auto; ">
+          <li class="list-group-item"><strong>Zero</strong> Vestibulum at eros</li>
+          <li class="list-group-item"><strong>16BITBoy</strong> Cras sit amet nibh libero</li>
+          <li class="list-group-item"><strong>Arkangel</strong> Porta ac consectetur ac</li>
+          <li class="list-group-item"><strong>LordRNA</strong> Vestibulum at eros</li>
+          <li class="list-group-item"><strong>Zero</strong> Vestibulum at eros</li>
+          <li class="list-group-item"><strong>16BITBoy</strong> Cras sit amet nibh libero</li>
+          <li class="list-group-item"><strong>Arkangel</strong> Porta ac consectetur ac</li>
+          <li class="list-group-item"><strong>LordRNA</strong> Vestibulum at eros</li>
+          <li class="list-group-item"><strong>Zero</strong> Vestibulum at eros</li>
+          <li class="list-group-item"><strong>16BITBoy</strong> Cras sit amet nibh libero</li>
+          <li class="list-group-item"><strong>Arkangel</strong> Porta ac consectetur ac</li>
+          <li class="list-group-item"><strong>LordRNA</strong> Vestibulum at eros</li>
+          <li class="list-group-item"><strong>Zero</strong> Vestibulum at eros</li>
+          <li class="list-group-item"><strong>16BITBoy</strong> Cras sit amet nibh libero</li>
+          <li class="list-group-item"><strong>Arkangel</strong> Porta ac consectetur ac</li>
+          <li class="list-group-item"><strong>LordRNA</strong> Vestibulum at eros</li>
+          <li class="list-group-item"><strong>Zero</strong> Vestibulum at eros</li>
+          <li class="list-group-item"><strong>16BITBoy</strong> Cras sit amet nibh libero</li>
+          <li class="list-group-item"><strong>Arkangel</strong> Porta ac consectetur ac</li>
+          <li class="list-group-item"><strong>LordRNA</strong> Vestibulum at eros</li>
+          <li class="list-group-item"><strong>Zero</strong> Vestibulum at eros</li>
+          <li class="list-group-item"><strong>16BITBoy</strong> Cras sit amet nibh libero</li>
+          <li class="list-group-item"><strong>Arkangel</strong> Porta ac consectetur ac</li>
+          <li class="list-group-item"><strong>LordRNA</strong> Vestibulum at eros</li>
+        </ul>
+      </div>
+    </dvi>
+  </dvi>
+  </div>
 </div>
+
+<script>
+  var box = document.getElementById("chatBox");
+  box.scrollTop = box.scrollHeight;
+</script>
 
 <footer class="footer">
   <div class="container">
