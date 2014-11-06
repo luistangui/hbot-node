@@ -196,6 +196,8 @@ StanzaProcessor.prototype.broadcastMessage = function(from,message)
     
     var brcMessage=UserFrom.nick+": "+message;
     
+    //self.io.sockets.emit("xmpp-message:save",self.roster);
+    
     
     self.roster.forEach(function(rosterItem)
     {
