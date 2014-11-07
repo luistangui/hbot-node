@@ -13,13 +13,18 @@ module.exports =
         
         for(var key in client.plugins)
         {
-            strHelp+="\r\n!"+key;
-            for(var i=0;i<client.plugins[key].params;i++)
+            if(client.plugins[key].hasOwnProperty("command"))
             {
-                strHelp+=" arg"+i;
+                strHelp+="\r\n!"+key;
+                for(var i=0;i<client.plugins[key].params;i++)
+                {
+                    strHelp+=" arg"+i;
+                }
+                strHelp+=" : "+client.plugins[key].description;
             }
-            strHelp+=" : "+client.plugins[key].description;
         };
+        
+        strHelp+="\r\nVersión web: hbotnode-hbot.rhcloud.com";
 
         client.sendMessage(from,strHelp);
     }

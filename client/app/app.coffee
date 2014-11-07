@@ -6,7 +6,8 @@ angular.module 'hbotNodeApp', [
   'ngSanitize',
   'ngRoute',
   'btford.socket-io',
-  'ui.bootstrap'
+  'ui.bootstrap',
+  'luegg.directives'
 ]
 .config ($routeProvider, $locationProvider, $httpProvider) ->
   $routeProvider

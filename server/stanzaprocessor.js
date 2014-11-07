@@ -9,6 +9,7 @@ function StanzaProcessor(xmppClient,socketio)
     this.xmppClient = xmppClient;
     this.events = new EventEmitter();
     this.io=socketio;
+    self.lastMsg=null;
     
     require('./pluginloader')(this.onPluginsLoaded);
 }
@@ -89,7 +90,7 @@ StanzaProcessor.prototype.onChat = function(from, message)
             self.saveRoster();
         }
         
-        if(message.charAt(0) == "$") 
+        if(message.charAt(0) == "$" || message.charAt(0) == "!") 
         {
             var aMsg=message.split(" ");
             var command = aMsg[0].slice(1);
@@ -107,7 +108,43 @@ StanzaProcessor.prototype.onChat = function(from, message)
         }
         else // Mensaje para todos los users
         {
-            self.broadcastMessage(from,message);   
+            var msgObj={};
+            msgObj.body=message;
+            msgObj.from=from;
+            
+            console.log(msgObj);
+            
+            /* ### NO FUNCIONA ##
+            var async = require("async");
+
+            var asyncTasks = [];
+            
+            for(var key in self.plugins)
+            {
+                if(self.plugins[key].hasOwnProperty("onMessage"))
+                {
+  
+                    asyncTasks.push(function(callback)
+                    {
+                        self.plugins[key].onMessage(function()
+                        {
+                            callback();
+                        },self,msgObj);
+                    });
+                }
+            };
+            
+            
+            // Now we have an array of functions doing async tasks
+            // Execute all async tasks in the asyncTasks array
+            async.parallel(asyncTasks, function()
+            {
+                // All tasks are done now
+                
+                */
+                console.log(msgObj);
+                self.broadcastMessage(msgObj.from,msgObj.body);
+           // });
         }
     }
 };
@@ -190,13 +227,22 @@ StanzaProcessor.prototype.onRoster = function(roster)
     });
 }
 
+StanzaProcessor.prototype.getLastMessage=function()
+{
+    return self.lastMsg;
+}
+
 StanzaProcessor.prototype.broadcastMessage = function(from,message)
 {
     var UserFrom=self.getUser(from);
     
     var brcMessage=UserFrom.nick+": "+message;
     
-    //self.io.sockets.emit("xmpp-message:save",self.roster);
+    var objMsg={};
+    objMsg.nick=UserFrom.nick;
+    objMsg.message=message;
+    self.lastMsg=objMsg;
+    self.io.sockets.emit("xmpp-message:save",objMsg);
     
     
     self.roster.forEach(function(rosterItem)
@@ -204,20 +250,27 @@ StanzaProcessor.prototype.broadcastMessage = function(from,message)
         if(rosterItem.jid!=from && rosterItem.state!=self.xmppClient.STATUS.OFFLINE && !rosterItem.busy)
         {
             console.log("\""+brcMessage+"\""+" -> "+rosterItem.jid);
-            self.xmppClient.send(rosterItem.jid,brcMessage,false);
+            //self.xmppClient.send(rosterItem.jid,brcMessage,false);
         }
     });
 }
 
 StanzaProcessor.prototype.sendBotMessage=function(message)
 {
+    var objMsg={};
+    objMsg.nick="[Claptrap]";
+    objMsg.message=message;
+    self.lastMsg=objMsg;
+    self.io.sockets.emit("xmpp-message:save",objMsg);
+    
     message="[Claptrap]: "+message;
+    
     self.roster.forEach(function(rosterItem)
     {
         if(rosterItem.state!=self.xmppClient.STATUS.OFFLINE && !rosterItem.busy)
         {
             console.log("\""+message+"\""+" -> "+rosterItem.jid);
-            self.xmppClient.send(rosterItem.jid,message,false);
+            //self.xmppClient.send(rosterItem.jid,message,false);
         }
     });   
 }

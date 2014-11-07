@@ -37,43 +37,16 @@
     <div class="col-md-9">
       <div class="panel panel-primary">
         <div class="panel-heading">Live Chat</div>
-      
-        <ul id="chatBox" class="list-group" style="max-height:350px;overflow-y:auto; ">
-          <li class="list-group-item"><strong>Zero</strong> Vestibulum at eros</li>
-          <li class="list-group-item"><strong>16BITBoy</strong> Cras sit amet nibh libero</li>
-          <li class="list-group-item"><strong>Arkangel</strong> Porta ac consectetur ac</li>
-          <li class="list-group-item"><strong>LordRNA</strong> Vestibulum at eros</li>
-          <li class="list-group-item"><strong>Zero</strong> Vestibulum at eros</li>
-          <li class="list-group-item"><strong>16BITBoy</strong> Cras sit amet nibh libero</li>
-          <li class="list-group-item"><strong>Arkangel</strong> Porta ac consectetur ac</li>
-          <li class="list-group-item"><strong>LordRNA</strong> Vestibulum at eros</li>
-          <li class="list-group-item"><strong>Zero</strong> Vestibulum at eros</li>
-          <li class="list-group-item"><strong>16BITBoy</strong> Cras sit amet nibh libero</li>
-          <li class="list-group-item"><strong>Arkangel</strong> Porta ac consectetur ac</li>
-          <li class="list-group-item"><strong>LordRNA</strong> Vestibulum at eros</li>
-          <li class="list-group-item"><strong>Zero</strong> Vestibulum at eros</li>
-          <li class="list-group-item"><strong>16BITBoy</strong> Cras sit amet nibh libero</li>
-          <li class="list-group-item"><strong>Arkangel</strong> Porta ac consectetur ac</li>
-          <li class="list-group-item"><strong>LordRNA</strong> Vestibulum at eros</li>
-          <li class="list-group-item"><strong>Zero</strong> Vestibulum at eros</li>
-          <li class="list-group-item"><strong>16BITBoy</strong> Cras sit amet nibh libero</li>
-          <li class="list-group-item"><strong>Arkangel</strong> Porta ac consectetur ac</li>
-          <li class="list-group-item"><strong>LordRNA</strong> Vestibulum at eros</li>
-          <li class="list-group-item"><strong>Zero</strong> Vestibulum at eros</li>
-          <li class="list-group-item"><strong>16BITBoy</strong> Cras sit amet nibh libero</li>
-          <li class="list-group-item"><strong>Arkangel</strong> Porta ac consectetur ac</li>
-          <li class="list-group-item"><strong>LordRNA</strong> Vestibulum at eros</li>
-        </ul>
+          <ul id="chatBox" style="height:350px;overflow-y:scroll;" class="list-group" scroll-glue>
+            <li ng-repeat="message in xmppMessages" class="list-group-item">
+              <strong>{{message.nick}}:</strong>   {{message.message}}
+            </li>
+          </ul>
       </div>
     </dvi>
   </dvi>
   </div>
 </div>
-
-<script>
-  var box = document.getElementById("chatBox");
-  box.scrollTop = box.scrollHeight;
-</script>
 
 <footer class="footer">
   <div class="container">
