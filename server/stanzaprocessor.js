@@ -196,23 +196,26 @@ StanzaProcessor.prototype.onRoster = function(roster)
     
     self.roster.forEach(function(rosterItem)
     {
-        HBotUserModel.findOne({jid:rosterItem.jid}, function (err, user)
-        {
-            if (err) console.log(err);
-            if(user!=null) 
+        self.xmppClient.probe(rosterItem.jid,function(state)
+    	{
+            HBotUserModel.findOne({jid:rosterItem.jid}, function (err, user)
             {
-                rosterItem.nick=user.nick;
-                rosterItem.busy=user.busy;
-            }
-        });
-
-        var user = new HBotUserModel();
-    	user.jid = rosterItem.jid;
-    	user.nick= rosterItem.jid.substr(0,rosterItem.jid.indexOf('@'));
-    	user.save();
-    	
-    	rosterItem.state=self.xmppClient.STATUS.OFFLINE;
-    	
+                if (err) console.log(err);
+                if(user!=null) 
+                {
+                    rosterItem.nick=user.nick;
+                    rosterItem.busy=user.busy;
+                }
+            });
+    
+            var user = new HBotUserModel();
+        	user.jid = rosterItem.jid;
+        	user.nick= rosterItem.jid.substr(0,rosterItem.jid.indexOf('@'));
+        	user.state=state;
+        	user.save();
+        	
+        	rosterItem.state=self.xmppClient.STATUS.OFFLINE;
+    	});
     });
 }
 
