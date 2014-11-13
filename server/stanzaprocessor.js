@@ -130,13 +130,20 @@ StanzaProcessor.prototype.onChat = function(from, message)
                 }
             }
             
-            async.parallel(asyncTasks, function()
+            if(asyncTasks.length>0)
+            {
+                async.parallel(asyncTasks, function()
+                {
+                    self.broadcastMessage(msgObj.from,msgObj.body);
+                });
+            }
+            else
             {
                 self.broadcastMessage(msgObj.from,msgObj.body);
-            });
+            }
         }
     }
-};
+}
 
 StanzaProcessor.prototype.saveRoster=function()
 {
@@ -196,25 +203,27 @@ StanzaProcessor.prototype.onRoster = function(roster)
     
     self.roster.forEach(function(rosterItem)
     {
+        rosterItem.state=self.xmppClient.STATUS.OFFLINE;
+        
+        HBotUserModel.findOne({jid:rosterItem.jid}, function (err, user)
+        {
+            if (err) console.log(err);
+            if(user!=null) 
+            {
+                rosterItem.nick=user.nick;
+                rosterItem.busy=user.busy;
+            }
+        });
+        
+        var user = new HBotUserModel();
+    	user.jid = rosterItem.jid;
+    	user.nick= rosterItem.jid.substr(0,rosterItem.jid.indexOf('@'));
+    	user.save();
+            
         self.xmppClient.probe(rosterItem.jid,function(state)
     	{
-            HBotUserModel.findOne({jid:rosterItem.jid}, function (err, user)
-            {
-                if (err) console.log(err);
-                if(user!=null) 
-                {
-                    rosterItem.nick=user.nick;
-                    rosterItem.busy=user.busy;
-                }
-            });
-    
-            var user = new HBotUserModel();
-        	user.jid = rosterItem.jid;
-        	user.nick= rosterItem.jid.substr(0,rosterItem.jid.indexOf('@'));
-        	user.state=state;
-        	user.save();
-        	
-        	rosterItem.state=self.xmppClient.STATUS.OFFLINE;
+            rosterItem.state=state;
+            self.saveRoster();
     	});
     });
 }
@@ -226,6 +235,7 @@ StanzaProcessor.prototype.getLastMessage=function()
 
 StanzaProcessor.prototype.broadcastMessage = function(from,message)
 {
+    console.log("Broadcast!");
     var UserFrom=self.getUser(from);
     
     var brcMessage=UserFrom.nick+": "+message;
@@ -241,8 +251,11 @@ StanzaProcessor.prototype.broadcastMessage = function(from,message)
     {
         if(rosterItem.jid!=from && rosterItem.state!=self.xmppClient.STATUS.OFFLINE && !rosterItem.busy)
         {
-            console.log("\""+brcMessage+"\""+" -> "+rosterItem.jid);
-            self.xmppClient.send(rosterItem.jid,brcMessage,false);
+            setTimeout(function()
+            {
+                console.log("\""+brcMessage+"\""+" -> "+rosterItem.jid);
+                self.xmppClient.send(rosterItem.jid,brcMessage,false);
+            },300);
         }
     });
 }
@@ -261,8 +274,11 @@ StanzaProcessor.prototype.sendBotMessage=function(message)
     {
         if(rosterItem.state!=self.xmppClient.STATUS.OFFLINE && !rosterItem.busy)
         {
-            console.log("\""+message+"\""+" -> "+rosterItem.jid);
-            self.xmppClient.send(rosterItem.jid,message,false);
+            setTimeout(function()
+            {
+                console.log("\""+message+"\""+" -> "+rosterItem.jid);
+                self.xmppClient.send(rosterItem.jid,message,false);
+            },300);
         }
     });   
 }
