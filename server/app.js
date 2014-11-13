@@ -39,6 +39,10 @@ var gtalk = require('simple-xmpp');
 
 gtalk.connect(options);
 
+gtalk.conn.connection.socket.setTimeout(0);
+gtalk.conn.connection.socket.setKeepAlive(true, 10000);
+
+
 var StanzaProcessor = require('./stanzaprocessor.js');
 var stanzaProcessor=new StanzaProcessor(gtalk,socketio);
 

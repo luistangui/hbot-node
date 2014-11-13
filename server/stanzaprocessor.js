@@ -1,4 +1,3 @@
-var ltx=require('ltx');
 var EventEmitter = require('events').EventEmitter;
 var self;
 var HBotUserModel=require('./user.model').HBotUserModel;
@@ -112,9 +111,6 @@ StanzaProcessor.prototype.onChat = function(from, message)
             msgObj.body=message;
             msgObj.from=from;
             
-            console.log(msgObj);
-            
-            /* ### NO FUNCIONA ##
             var async = require("async");
 
             var asyncTasks = [];
@@ -123,28 +119,21 @@ StanzaProcessor.prototype.onChat = function(from, message)
             {
                 if(self.plugins[key].hasOwnProperty("onMessage"))
                 {
-  
+                    var myFunction=self.plugins[key].onMessage;
                     asyncTasks.push(function(callback)
                     {
-                        self.plugins[key].onMessage(function()
+                        myFunction(self,msgObj,function()
                         {
                             callback();
-                        },self,msgObj);
+                        });
                     });
                 }
-            };
+            }
             
-            
-            // Now we have an array of functions doing async tasks
-            // Execute all async tasks in the asyncTasks array
             async.parallel(asyncTasks, function()
             {
-                // All tasks are done now
-                
-                */
-                console.log(msgObj);
                 self.broadcastMessage(msgObj.from,msgObj.body);
-           // });
+            });
         }
     }
 };
@@ -250,7 +239,7 @@ StanzaProcessor.prototype.broadcastMessage = function(from,message)
         if(rosterItem.jid!=from && rosterItem.state!=self.xmppClient.STATUS.OFFLINE && !rosterItem.busy)
         {
             console.log("\""+brcMessage+"\""+" -> "+rosterItem.jid);
-            //self.xmppClient.send(rosterItem.jid,brcMessage,false);
+            self.xmppClient.send(rosterItem.jid,brcMessage,false);
         }
     });
 }
@@ -270,7 +259,7 @@ StanzaProcessor.prototype.sendBotMessage=function(message)
         if(rosterItem.state!=self.xmppClient.STATUS.OFFLINE && !rosterItem.busy)
         {
             console.log("\""+message+"\""+" -> "+rosterItem.jid);
-            //self.xmppClient.send(rosterItem.jid,message,false);
+            self.xmppClient.send(rosterItem.jid,message,false);
         }
     });   
 }

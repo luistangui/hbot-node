@@ -13,15 +13,16 @@ module.exports =
         
         for(var key in client.plugins)
         {
-            if(client.plugins[key].hasOwnProperty("command"))
+            strHelp+="\r\n"
+            strHelp+="!";
+            strHelp+=key;
+            
+            for(var i=0;i<client.plugins[key].params;i++)
             {
-                strHelp+="\r\n!"+key;
-                for(var i=0;i<client.plugins[key].params;i++)
-                {
-                    strHelp+=" arg"+i;
-                }
-                strHelp+=" : "+client.plugins[key].description;
+                strHelp+=" arg"+i;
             }
+            
+            strHelp+=" : "+client.plugins[key].description;
         };
         
         strHelp+="\r\nVersión web: hbotnode-hbot.rhcloud.com";
