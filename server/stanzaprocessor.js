@@ -25,34 +25,8 @@ StanzaProcessor.prototype.setupCallbacks = function()
     self.xmppClient.on('error', self.onError);
     self.xmppClient.on('chat', self.onChat);
     self.xmppClient.on('stanza', self.onStanza);
-    self.xmppClient.on('buddy', self.onBuddy);
     self.events.on('roster', self.onRoster);
-};
-
-StanzaProcessor.prototype.onBuddy=function(jid, state, statusText)
-{
-    if(self.roster!=undefined)
-    {
-        var User=self.getUser(jid);
-        if(User) User.state=state;
-        
-        console.log("BUDDY: "+jid+" -> ("+state+")");
-        
-        self.roster.sort(function(a,b)
-        {
-            if(a.state==b.state) return 0;
-            
-            if(a.state==self.xmppClient.STATUS.OFFLINE ||
-                b.state==self.xmppClient.STATUS.OFFLINE)
-            {
-                return a.state==self.xmppClient.STATUS.OFFLINE?1:-1;
-            }
-            
-            return 0;
-        });
-        
-        self.saveRoster();
-    }
+    self.events.on('presenceChanged',self.onPresenceChanged);
 };
 
 StanzaProcessor.prototype.onConnected = function() 
@@ -149,22 +123,20 @@ StanzaProcessor.prototype.saveRoster=function()
 {
     self.roster.forEach(function(rosterItem)
     {
-        if(rosterItem.nick!=undefined)
+        if(rosterItem.nick!==undefined)
         {
             HBotUserModel.findOne({jid:rosterItem.jid}, function (err, user)
             {
                 if (err) console.log(err);
                 if(user!=null && user.nick!=rosterItem.nick) 
                 {
-                    HBotUserModel.update({jid:rosterItem.jid},{nick:rosterItem.nick},function(err, nbRow)
+                    HBotUserModel.update({jid:rosterItem.jid},{nick:rosterItem.nick,state:rosterItem.state,busy:rosterItem.busy},function(err, nbRow)
                     {
     					if (err)
     					{
     						console.log(err);
     					}
                     });
-            
-                    console.log("Nick updated! "+rosterItem.jid+" -> "+rosterItem.nick);
                 }
             });
         }
@@ -173,16 +145,21 @@ StanzaProcessor.prototype.saveRoster=function()
     self.io.sockets.emit("xmpp-roster:save",self.roster);
 }
 
-StanzaProcessor.prototype.onStanza = function(stanza) {
-    if(stanza.is('iq')) {
-        if(stanza.attrs.id == "roster_0" && stanza.attrs.type == "result") {
+StanzaProcessor.prototype.onStanza = function(stanza)
+{
+    if(stanza.is('iq'))
+    {
+        if(stanza.attrs.id == "roster_0" && stanza.attrs.type == "result")
+        {
             var query = stanza.getChild("query");
             var xmlItems = query.getChildren("item");
             var roster = [];
-            xmlItems.forEach(function(xmlItem) {
+            xmlItems.forEach(function(xmlItem)
+            {
                 var item = {};
                 var attr;
-                for (attr in xmlItem.attrs) {
+                for (attr in xmlItem.attrs)
+                {
                     item[attr] = xmlItem.attrs[attr];
                 }
                 roster.push(item);
@@ -190,7 +167,92 @@ StanzaProcessor.prototype.onStanza = function(stanza) {
             self.events.emit('roster', roster);
         }
     }
+    else if(stanza.is('presence'))
+    {
+        console.log("BUDDY:\n"+stanza);
+        var from = stanza.attrs.from;
+        
+        if(stanza.attrs.type == 'unavailable' || !stanza.attrs.type)
+        {
+            var jid = from.split('/')[0];
+            var resource=from.split('/')[1];
+            
+            var statusText = stanza.getChildText('status');
+            var state = (stanza.getChild('show'))? stanza.getChild('show').getText(): self.xmppClient.STATUS.ONLINE;
+            state = (state == 'chat')? self.xmppClient.STATUS.ONLINE : state;
+            state = (stanza.attrs.type == 'unavailable')? self.xmppClient.STATUS.OFFLINE : state;
+            
+            self.events.emit('presenceChanged',jid, resource, state, statusText);
+            
+        }
+    }
 };
+
+StanzaProcessor.prototype.onPresenceChanged=function(jid, resource, state, statusText)
+{
+    if(self.roster!==undefined)
+    {
+        var User=self.getUser(jid);
+        if(User)
+        {
+            var presence={};
+            presence.resource=resource;
+            presence.state=state;
+
+            //Si existe el resource actualizamos su estado
+            var resourceExists=false;
+            User.presences.forEach(function(presence)
+            {
+                if(presence.resource==resource)
+                {
+                    presence.state=state;
+                    resourceExists=true;
+                }
+            });
+            
+            //Si no existe lo añadimos a la lista
+            if(!resourceExists)
+            {
+                User.presences.push(presence);
+            }
+            
+            
+            var onlinePresences=User.presences.filter(function(presence)
+            {
+                return presence.state==self.xmppClient.STATUS.ONLINE;
+            });
+            
+            console.log("ONLINE:\n"+onlinePresences);
+            
+            if(onlinePresences.length>0)
+            {
+                User.state=self.xmppClient.STATUS.ONLINE;
+            }
+            else
+            {
+                User.state=state;    
+            }
+            
+            console.log("BUDDY: "+jid+" -> ("+state+")");
+            console.log(User.presences);
+            
+            self.roster.sort(function(a,b)
+            {
+                if(a.state==b.state) return 0;
+                
+                if(a.state==self.xmppClient.STATUS.OFFLINE ||
+                    b.state==self.xmppClient.STATUS.OFFLINE)
+                {
+                    return a.state==self.xmppClient.STATUS.OFFLINE?1:-1;
+                }
+                
+                return 0;
+            });
+            
+            self.saveRoster();
+        }
+    }
+}
 
 StanzaProcessor.prototype.onRoster = function(roster)
 {
@@ -215,14 +277,17 @@ StanzaProcessor.prototype.onRoster = function(roster)
             }
         });
         
-        var user = new HBotUserModel();
-    	user.jid = rosterItem.jid;
-    	user.nick= rosterItem.jid.substr(0,rosterItem.jid.indexOf('@'));
-    	user.save();
-            
+        //No tiene efecto si el usuario ya existe
+        self.user = new HBotUserModel();
+    	self.user.jid = rosterItem.jid;
+    	self.user.nick= rosterItem.jid.substr(0,rosterItem.jid.indexOf('@'));
+    	self.user.save();
+    	
+    	rosterItem.presences=[];
+    	rosterItem.activeResource=null;
+        
         self.xmppClient.probe(rosterItem.jid,function(state)
     	{
-            rosterItem.state=state;
             self.saveRoster();
     	});
     });
@@ -249,12 +314,29 @@ StanzaProcessor.prototype.broadcastMessage = function(from,message)
     
     self.roster.forEach(function(rosterItem)
     {
-        if(rosterItem.jid!=from && rosterItem.state!=self.xmppClient.STATUS.OFFLINE && !rosterItem.busy)
+        if(rosterItem.jid!=from && rosterItem.state!=self.xmppClient.STATUS.OFFLINE && !rosterItem.busy && rosterItem.jid!="bot@h-sec.org")
         {
             setTimeout(function()
             {
-                console.log("\""+brcMessage+"\""+" -> "+rosterItem.jid);
-                self.xmppClient.send(rosterItem.jid,brcMessage,false);
+                var onlinePresences=rosterItem.presences.filter(function(presence)
+                {
+                    return presence.state==self.xmppClient.STATUS.ONLINE;
+                });
+                
+                if(onlinePresences.length>0)
+                {
+                    onlinePresences.forEach(function(presence)
+                    {
+                        console.log("\""+brcMessage+"\""+" -> "+rosterItem.jid+"/"+presence.resource);
+                        self.xmppClient.send(rosterItem.jid+"/"+presence.resource,brcMessage,false);
+                    });
+                    
+                }
+                else
+                {
+                    console.log("\""+brcMessage+"\""+" -> "+rosterItem.jid);
+                    self.xmppClient.send(rosterItem.jid,brcMessage,false);
+                }
             },300);
         }
     });
@@ -276,8 +358,25 @@ StanzaProcessor.prototype.sendBotMessage=function(message)
         {
             setTimeout(function()
             {
-                console.log("\""+message+"\""+" -> "+rosterItem.jid);
-                self.xmppClient.send(rosterItem.jid,message,false);
+                var onlinePresences=rosterItem.presences.filter(function(presence)
+                {
+                    return presence.state==self.xmppClient.STATUS.ONLINE;
+                });
+                
+                if(onlinePresences.length==1)
+                {
+                    onlinePresences.forEach(function(presence)
+                    {
+                        console.log("\""+message+"\""+" -> "+rosterItem.jid+"/"+presence.resource);
+                        self.xmppClient.send(rosterItem.jid+"/"+presence.resource,message,false);
+                    });
+                    
+                }
+                else
+                {
+                    console.log("\""+message+"\""+" -> "+rosterItem.jid);
+                    self.xmppClient.send(rosterItem.jid,message,false);
+                }
             },300);
         }
     });   

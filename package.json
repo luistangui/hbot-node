@@ -24,6 +24,7 @@
     "node-xmpp-client": "^1.0.0-alpha15",
     "passport": "~0.2.0",
     "passport-local": "~0.1.6",
+    "request": "^2.48.0",
     "serve-favicon": "~2.0.1",
     "simple-xmpp": "^0.1.92",
     "socket.io": "^1.0.6",
