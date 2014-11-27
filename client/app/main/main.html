@@ -19,8 +19,8 @@
 <div class="container">
   <div class="row">
     <div class="col-md-3">
-      <p>
-        <h4>Online</h4>
+      <div class="panel panel-primary">
+        <div class="panel-heading">Online</div>
         <ul class="list-unstyled">
           <li ng-repeat="user in xmppRoster" class="list-unstyled">
             <span ng-switch on="user.state">
@@ -32,13 +32,13 @@
             </span>
           </li>
         </ul>
-      </p>
+      </div>
     </div>
     <div class="col-md-9">
       <div class="panel panel-primary">
         <div class="panel-heading">Live Chat</div>
-          <ul id="chatBox" style="height:350px;overflow-y:scroll;" class="list-group" scroll-glue>
-            <li ng-repeat="message in xmppMessages" class="list-group-item">
+          <ul id="chatBox" style="height: 550px;overflow-y:scroll;" class="list-group" scroll-glue>
+            <li ng-repeat="message in xmppMessages" class="list-group-item" style="background-color: #1e1e20;border: 1px solid #333;">
               <strong>{{message.nick}}:</strong>   {{message.message}}
             </li>
           </ul>
@@ -50,6 +50,6 @@
 
 <footer class="footer">
   <div class="container">
-      <p>QHBot v0.1a</p>
+      <p>NHBot v0.1a</p>
   </div>
 </footer>

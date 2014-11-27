@@ -23,10 +23,18 @@ StanzaProcessor.prototype.setupCallbacks = function()
 {
     self.xmppClient.on('online', self.onConnected);
     self.xmppClient.on('error', self.onError);
+    self.xmppClient.on('close',self.onClose);
     self.xmppClient.on('chat', self.onChat);
     self.xmppClient.on('stanza', self.onStanza);
     self.events.on('roster', self.onRoster);
     self.events.on('presenceChanged',self.onPresenceChanged);
+};
+
+StanzaProcessor.prototype.onClose = function()
+{
+    self.xmppClient.disconnect();
+    var options = require('./config.json');
+    self.xmppClient.connect(options);
 };
 
 StanzaProcessor.prototype.onConnected = function() 
@@ -39,6 +47,9 @@ StanzaProcessor.prototype.onConnected = function()
 StanzaProcessor.prototype.onError = function(err) 
 {
     console.error("[ERROR]: "+err);
+    self.xmppClient.disconnect();
+    var options = require('./config.json');
+    self.xmppClient.connect(options);
 };
 
 StanzaProcessor.prototype.getUser=function(jid)
@@ -222,8 +233,6 @@ StanzaProcessor.prototype.onPresenceChanged=function(jid, resource, state, statu
                 return presence.state==self.xmppClient.STATUS.ONLINE;
             });
             
-            console.log("ONLINE:\n"+onlinePresences);
-            
             if(onlinePresences.length>0)
             {
                 User.state=self.xmppClient.STATUS.ONLINE;
@@ -323,7 +332,7 @@ StanzaProcessor.prototype.broadcastMessage = function(from,message)
                     return presence.state==self.xmppClient.STATUS.ONLINE;
                 });
                 
-                if(onlinePresences.length>0)
+                if(onlinePresences.length==1)
                 {
                     onlinePresences.forEach(function(presence)
                     {
@@ -354,7 +363,7 @@ StanzaProcessor.prototype.sendBotMessage=function(message)
     
     self.roster.forEach(function(rosterItem)
     {
-        if(rosterItem.state!=self.xmppClient.STATUS.OFFLINE && !rosterItem.busy)
+        if(rosterItem.state!=self.xmppClient.STATUS.OFFLINE && !rosterItem.busy && rosterItem.jid!="bot@h-sec.org")
         {
             setTimeout(function()
             {

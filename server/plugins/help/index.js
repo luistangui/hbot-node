@@ -25,7 +25,7 @@ module.exports =
             strHelp+=" : "+client.plugins[key].description;
         };
         
-        strHelp+="\r\nVersión web: hbotnode-hbot.rhcloud.com";
+        strHelp+="\r\nVersión web: http://claptrap.blackstack.org";
 
         client.sendMessage(from,strHelp);
     }
